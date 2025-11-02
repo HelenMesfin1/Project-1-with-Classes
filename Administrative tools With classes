@@ -1,1 +1,95 @@
+from itertools import groupby
+from datetime import datetime
+import os
+import json
+from typing import List, Dict
 
+class ArtCollection:
+    """Collection of artworks with tagging, search, sort, grouping, and admin tools."""
+
+    def __init__(self, artworks=None):
+        self._artworks = artworks if artworks else []
+        self._admin_log = []
+
+    @property
+    def artworks(self):
+        return list(self._artworks)
+
+    @property
+    def admin_log(self):
+        return list(self._admin_log)
+
+    def _get_artwork_by_id(self, artwork_id):
+        for art in self._artworks:
+            if art["id"] == artwork_id:
+                return art
+        return None
+
+    def _log_action(self, event, user_id="Admin", details=None):
+        log_entry = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "user_id": user_id,
+            "event": event,
+            "details": details or {}
+        }
+        self._admin_log.append(log_entry)
+        return log_entry
+
+    def add_artwork(self, new_artwork, user_id="Admin"):
+        required_keys = {"id", "title", "artist", "year", "medium", "department", "tags"}
+        if not isinstance(new_artwork, dict) or not required_keys.issubset(new_artwork.keys()):
+            return
+        if self._get_artwork_by_id(new_artwork["id"]):
+            return
+        self._artworks.append(new_artwork)
+        self._log_action(f"Added artwork '{new_artwork['title']}'", user_id)
+
+    def add_tag(self, artwork_id, tag, user_id="Admin"):
+        art = self._get_artwork_by_id(artwork_id)
+        if art:
+            if tag not in art["tags"]:
+                art["tags"].append(tag)
+                self._log_action(f"Added tag '{tag}' to '{art['title']}'", user_id)
+
+    def search_artworks(self, query="", filters=None):
+        if filters is None:
+            filters = {}
+        results = []
+        for art in self._artworks:
+            if query.lower() in art["title"].lower() or query.lower() in art["artist"].lower():
+                match = all(str(art.get(k)).lower() == str(v).lower() for k, v in filters.items())
+                if match:
+                    results.append(art)
+        return results
+
+    def sort_artworks(self, order_by="year"):
+        try:
+            return sorted(self._artworks, key=lambda x: x[order_by])
+        except KeyError:
+            return self._artworks
+
+    def group_by(self, attribute):
+        try:
+            sorted_arts = sorted(self._artworks, key=lambda x: x[attribute])
+            return {k: list(g) for k, g in groupby(sorted_arts, key=lambda x: x[attribute])}
+        except KeyError:
+            return {}
+
+    def display_all(self):
+        return [f"{art['title']} ({art['year']}) by {art['artist']}" for art in self._artworks]
+
+    def approve_artwork(self, artwork_id, user_id="Admin"):
+        art = self._get_artwork_by_id(artwork_id)
+        if art:
+            art["status"] = "approved"
+            art["approved_at"] = datetime.utcnow().isoformat()
+            self._log_action(f"Artwork '{art['title']}' approved", user_id)
+            return art
+
+    def flag_artwork(self, artwork_id, reason, user_id="Admin"):
+        art = self._get_artwork_by_id(artwork_id)
+        if art:
+            art["status"] = "flagged"
+            art["flag_reason"] = reason
+            art["flagged_at"] = datetime.utcnow().isoformat()
+            self._log
