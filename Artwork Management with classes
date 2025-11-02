@@ -1,0 +1,73 @@
+class ArtManage:
+    def __init__(self):
+        self.database = []
+    def upload_artowrk():
+        if not metadata.get("title") or not metadata.get("description"):
+            raise ValueError("Both 'title' and 'description' are required.")
+
+        artwork = {
+            "artwork_id": len(self.database),  
+            "user_id": user_id,
+            "image": artwork_data,
+            "title": metadata.get("title"),
+            "description": metadata.get("description"),
+            "medium": metadata.get("medium"),
+            "size": metadata.get("size"),
+            "date": metadata.get("date")
+        }
+        self.database.append(artwork)
+        return f"Artwork '{artwork['title']}' uploaded successfully! ID: {artwork['artwork_id']}"
+    def edit_artwork(self, artwork_id: int, updated_data: Dict[str, Any]) -> str:
+        if artwork_id >= len(self.database) or artwork_id < 0:
+            raise IndexError("Artwork not found.")
+            
+        self.database[artwork_id].update(updated_data)
+        return f"Artwork '{self.database[artwork_id].get('title', 'Untitled')}' updated successfully!"
+    def delete_artwork(self, user_id: str, artwork_id: int, is_admin: bool = False) -> str:
+    
+        if artwork_id >= len(self.database) or artwork_id < 0:
+            raise IndexError("Artwork not found.")
+            
+        artwork = self.database[artwork_id]
+        owner_id = artwork.get("user_id")
+        
+        if user_id != owner_id and not is_admin:
+            raise PermissionError("You do not have permission to delete this artwork.")
+      
+        title = artwork.get('title', 'Untitled')
+        print(f"User '{user_id}' is attempting to delete artwork '{title}'.")
+        deleted = self.database.pop(artwork_id)
+        return f"Artwork '{deleted.get('title', 'Untitled')}' deleted successfully."
+    def list_artworks(self, filter_criteria: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+        if filter_criteria is None:
+            filter_criteria = {}
+        elif not isinstance(filter_criteria, dict):
+            raise ValueError("Filter criteria must be a dictionary.")
+
+        print("\n📋 Listing Artworks")
+        print("-" * 50)
+        
+        results = []
+        for art in self.database:
+            match = True
+            for key, value in filter_criteria.items():
+                if str(art.get(key, "")).lower() != str(value).lower():
+                    match = False
+                    break
+            
+            if match:
+                results.append(art)
+
+        if not results:
+            print("No artworks match the given filters.")
+        else:
+            for i, art in enumerate(results, start=1):
+                title = art.get("title", "Untitled")
+                user = art.get("user_id", "Unknown")
+                medium = art.get("medium", "Unknown Medium")
+                date = art.get("date", "Unknown Date")
+                art_id = art.get("artwork_id", "N/A")
+                print(f"ID:{art_id}. {title} by {user} | {medium} | {date}")
+                
+        print(f"\nTotal found: {len(results)}")
+        return results
