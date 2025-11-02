@@ -1,0 +1,120 @@
+#Organization and Tagging w/ classes
+# Class Implementation 
+from itertools import groupby
+
+class ArtCollection:
+    "Represents a collection of artworks with functionality to add tags,
+    search, sort, and group artworks."
+
+    def __init__(self, artworks=None):
+        "Initialize the ArtCollection with an optional list of artworks."
+        self.__artworks = artworks if artworks else []
+
+#Encapsaltion
+    @property
+    def artworks(self):
+        "Return a copy of artworks to protect internal data."
+        return list(self.__artworks)
+
+    def get_artwork_by_id(self, artwork_id):
+        "Return an artwork dictionary by its ID."
+        for artwork in self.__artworks:
+            if artwork["id"] == artwork_id:
+                return artwork
+        return None
+
+    # Core Methods
+    def add_tag(self, artwork_id, tag):
+        "Add a new tag to a specific artwork by its ID."
+        artwork = self.get_artwork_by_id(artwork_id)
+        if not artwork:
+            print("Artwork not found.")
+            return
+
+        if tag not in artwork["tags"]:
+            artwork["tags"].append(tag)
+            print(f"Tag '{tag}' added to '{artwork['title']}'")
+        else:
+            print(f"Tag '{tag}' already exists for '{artwork['title']}'")
+
+    def search_artworks(self, query="", filters=None):
+        "Search artworks by query and optional filters (like year, medium, etc.)."
+        if filters is None:
+            filters = {}
+        results = []
+
+        for artwork in self.__artworks:
+            if query.lower() in artwork["title"].lower() or query.lower() in artwork["artist"].lower():
+                match = True
+                for key, value in filters.items():
+                    if str(artwork.get(key)).lower() != str(value).lower():
+                        match = False
+                        break
+                if match:
+                    results.append(artwork)
+        return results
+
+    def sort_artworks(self, order_by="year"):
+        "Sort artworks by a chosen attribute."
+        try:
+            return sorted(self.__artworks, key=lambda x: x[order_by])
+        except KeyError:
+            print(f"Cannot sort by '{order_by}' – invalid key.")
+            return self.__artworks
+
+    def group_by(self, attribute):
+        "Group artworks by a given attribute."
+        try:
+            sorted_artworks = sorted(self.__artworks, key=lambda x: x[attribute])
+            groups = {key: list(group) for key, group in groupby(sorted_artworks, key=lambda x: x[attribute])}
+            return groups
+        except KeyError:
+            print(f" Invalid attribute '{attribute}' for grouping.")
+            return {}
+
+    #Extra Utilities
+    def add_artwork(self, new_artwork):
+        "Add a new artwork to the collection with validation."
+        if not isinstance(new_artwork, dict):
+            print("Artwork must be a dictionary.")
+            return
+        required_keys = {"id", "title", "artist", "year", "medium", "department", "tags"}
+        if not required_keys.issubset(new_artwork.keys()):
+            print("Missing one or more required artwork fields.")
+            return
+        if self.get_artwork_by_id(new_artwork["id"]):
+            print("Artwork with this ID already exists.")
+            return
+
+        self.__artworks.append(new_artwork)
+        print(f" Artwork '{new_artwork['title']}' added successfully.")
+
+    def display_all(self):
+        "Display a simple summary of all artworks."
+        print("\n Art Collection Summary:")
+        for art in self.__artworks:
+            print(f"- {art['title']} ({art['year']}) by {art['artist']}")
+
+# Example Usage
+if __name__ == "__main__":
+    initial_artworks = [
+        {"id": 1, "title": "Geolocation", "artist": "Nate Larson & Marni Shindelman", "year": 2013,
+         "medium": "Photo", "department": "Photography", "tags": ["photography", "realism"]},
+        {"id": 2, "title": "Cariño", "artist": "Edgar Reyes", "year": 2021,
+         "medium": "Multimedia", "department": "Photography", "tags": ["multimedia", "realism"]},
+        {"id": 3, "title": "All American Boys", "artist": "Akea Brionne", "year": 2020,
+         "medium": "Photo", "department": "Photography", "tags": ["multimedia", "realism"]}
+    ]
+
+    collection = ArtCollection(initial_artworks)
+    collection.display_all()
+
+    collection.add_tag(2, "identity")
+    results = collection.search_artworks(query="Edgar")
+    print("\n Search Results:", results)
+
+    sorted_list = collection.sort_artworks("year")
+    print("\n Sorted by Year:", [a["title"] for a in sorted_list])
+
+    grouped = collection.group_by("medium")
+    print("\n Grouped by Medium:", grouped.keys())
