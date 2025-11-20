@@ -1,4 +1,4 @@
-class ArtManage:
+class ArtworkManage:
     def __init__(self):
         self.database = []
     def upload_artowrk():
